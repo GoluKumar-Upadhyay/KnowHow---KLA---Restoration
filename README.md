@@ -281,7 +281,7 @@ KnowHow-KLA-Restoration/
 ├── README.md
 ├── requirements.txt
 ├── inference.py
-├── Documents/Research.docx
+├── Documents/Research.docx                              <-- Detailed research documentation 
 │
 ├── Documents/
 │   ├── ENVIRONMENT_SETUP.md
