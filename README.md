@@ -1,6 +1,17 @@
-# KnowHow — Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images
+<div align="center">
+  <h1>🔍 KnowHow</h1>
+  <h3>Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images</h3>
+  <p><i>A Statistical Investigation and Corrected Mixture-Density Restoration Network</i></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python" />
+    <img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg" alt="PyTorch" />
+    <img src="https://img.shields.io/badge/Task-Image%20Restoration-brightgreen" alt="Task" />
+    <img src="https://img.shields.io/badge/Hackathon-KLA%202026-orange" alt="Hackathon" />
+  </p>
+</div>
 
-### A Statistical Investigation and Corrected Mixture-Density Restoration Network
+---
 
 ## 1. Overview
 
@@ -79,14 +90,12 @@ The repository is designed so that the submitted model can be evaluated without 
 ```
 git clone https://github.com/GoluKumar-Upadhyay/KnowHow-KLA-Restoration.git
 cd KnowHow-KLA-Restoration
-
 ```
 
 ## 3.2 Install dependencies
 
 ```
 pip install -r requirements.txt
-
 ```
 
 `requirements.txt` was generated from the environment used to produce the submitted checkpoint.
@@ -97,7 +106,6 @@ pip install -r requirements.txt
 python inference.py \
     --input_dir <INPUT_DIRECTORY> \
     --output_dir <OUTPUT_DIRECTORY>
-
 ```
 
 Example:
@@ -106,14 +114,12 @@ Example:
 python inference.py \
     --input_dir /path/to/degraded_npy_folder \
     --output_dir /path/to/restored_output_folder
-
 ```
 
 The script automatically loads:
 
 ```
 results/checkpoints/DistributionMixtureRestorationNet.pth
-
 ```
 
 No source-code modification or manual checkpoint-path editing is required.
@@ -126,7 +132,6 @@ python inference.py \
     --output_dir /path/to/restored_output_folder \
     --batch_size 16 \
     --half
-
 ```
 
 ---
@@ -160,7 +165,6 @@ Post-processing
       │
       ▼
 Output Directory
-
 ```
 
 The script:
@@ -187,7 +191,6 @@ Format: .npy
 Type: float32
 Channels: Grayscale
 Resolution: 128 × 128
-
 ```
 
 The degraded data contains the image degradation described by the challenge:
@@ -198,7 +201,6 @@ Speckle noise
 Additive Gaussian noise
 +
 Spatial downsampling
-
 ```
 
 ## Output
@@ -211,7 +213,6 @@ test_001.npy
 
 Output:
 test_001.npy
-
 ```
 
 Output specification:
@@ -221,7 +222,6 @@ Format: .npy
 Type: float32
 Resolution: 256 × 256
 Value range: [0, 1]
-
 ```
 
 ---
@@ -232,28 +232,24 @@ The Python package environment used for the submitted model is recorded in:
 
 ```
 requirements.txt
-
 ```
 
 It was generated using:
 
 ```
 pip freeze > requirements.txt
-
 ```
 
 The exact hardware/software setup and NVIDIA GPU installation instructions are documented in:
 
 ```
 Documents/ENVIRONMENT_SETUP.md
-
 ```
 
 Detailed inference usage and troubleshooting are documented in:
 
 ```
 Documents/MODEL_USAGE_GUIDE.md
-
 ```
 
 The project was developed and efficiency measurements were performed on an NVIDIA RTX 3050 Laptop GPU with 4 GB VRAM.
@@ -319,7 +315,6 @@ KnowHow-KLA-Restoration/
 │       └── DistributionMixtureRestorationNet.pth
 │
 └── Data_Analysis_Images/
-
 ```
 
 ### Key files
@@ -350,7 +345,6 @@ The complete training process can be reproduced using:
 
 ```
 notebooks/05_Model_Training.ipynb
-
 ```
 
 Four models were trained under the same full-scale protocol:
@@ -437,7 +431,6 @@ The residual was defined as:
 
 ```
 Residual = NoisyLR - downsampled(GT)
-
 ```
 
 Four candidate distributions were fitted to:
@@ -445,7 +438,6 @@ Four candidate distributions were fitted to:
 ```
 400 matched image pairs
 6,553,600 residual pixels
-
 ```
 
 Candidates:
@@ -459,7 +451,6 @@ The Generalized Gaussian achieved the best AIC with:
 
 ```
 β = 0.845
-
 ```
 
 Its AIC was approximately 54,700 better than the next-best candidate.
@@ -474,7 +465,6 @@ Across:
 
 ```
 51,200 valid 32 × 32 patches
-
 ```
 
 the estimated local Generalized-Gaussian parameter was:
@@ -482,7 +472,6 @@ the estimated local Generalized-Gaussian parameter was:
 ```
 Mean β = 1.451
 Std β  = 0.428
-
 ```
 
 A one-way ANOVA showed significant spatial variation:
@@ -490,7 +479,6 @@ A one-way ANOVA showed significant spatial variation:
 ```
 F = 18.06
 p < 1e-300
-
 ```
 
 Local beta also correlated with:
@@ -499,14 +487,12 @@ Local beta also correlated with:
 Edge density   r = -0.388
 Local variance r = -0.550
 Entropy        r = -0.430
-
 ```
 
 with:
 
 ```
 p < 1e-300
-
 ```
 
 This finding motivated the use of a local mixture-based degradation representation rather than a single fixed global distribution.
@@ -521,7 +507,6 @@ Two components converged to the clamp boundary:
 
 ```
 β = 3.0
-
 ```
 
 and one component became unused.
@@ -532,14 +517,12 @@ The correction replaced the hard clamp with:
 
 ```
 Smooth sigmoid reparameterization
-
 ```
 
 and introduced:
 
 ```
 Entropy-based load balancing
-
 ```
 
 The corrected model converged to:
@@ -548,7 +531,6 @@ The corrected model converged to:
 β ≈ [1.76, 2.20, 2.50]
 
 Usage ≈ [0.19, 0.40, 0.41]
-
 ```
 
 with stable behavior from approximately epoch 60 through epoch 200.
@@ -594,7 +576,6 @@ Measured on:
 ```
 NVIDIA RTX 3050 Laptop GPU
 4 GB VRAM
-
 ```
 
 | ModelParametersGFLOPsBatch 1Batch 16 FP16 |         |       |             |              |
@@ -614,7 +595,6 @@ A supporting OOD experiment was performed on:
 
 ```
 10 external microscopy images
-
 ```
 
 from the Carinthia-S dataset with synthetic degradation applied.
@@ -627,7 +607,6 @@ Std PSNR  = 2.64 dB
 
 Mean SSIM = 0.746
 Std SSIM  = 0.025
-
 ```
 
 This experiment is treated as **supporting evidence only**, not proof of full domain generalization, because of the small sample size and external-domain setup.
@@ -644,7 +623,6 @@ Training set:
 
 ```
 3,200 matched GT + NoisyLR pairs
-
 ```
 
 Split:
@@ -652,14 +630,12 @@ Split:
 ```
 2,880 training
 320 validation
-
 ```
 
 with:
 
 ```
 Seed = 42
-
 ```
 
 No public/external dataset was used for model training.
@@ -668,43 +644,11 @@ No public/external dataset was used for model training.
 
 # 15. Known Limitations
 
-The following limitations are intentionally reported.
-
-### Statistical significance across seeds
-
-All reported model results come from single training runs per configuration. Differences around 0.01–0.1 dB have not been tested for significance across multiple random seeds.
-
-### Reduced-scale ablation
-
-The reduced-scale ablation using 200 pairs and 3 epochs favored the simpler fixed-loss baseline. The full-scale experiment reversed this ordering, but a full-scale rerun of this specific ablation has not been performed to directly confirm the training-budget explanation.
-
-### External architecture comparison
-
-No complete end-to-end comparison has been performed against externally released restoration architectures such as Restormer, SwinIR, officially released NAFNet, or MambaIR.
-
-### Mixture-component usage
-
-The corrected LDMH no longer collapses, but component usage is not perfectly uniform:
-
-```
-≈ 19% / 40% / 41%
-
-```
-
-rather than an ideal:
-
-```
-33% / 33% / 33%
-
-```
-
-### Deployment optimization
-
-ONNX export, INT8 quantization and TensorRT conversion are not implemented.
-
-### Degradation-specific synthetic robustness
-
-The `SPECKLE_LOOKS` and `GAUSSIAN_SIGMA` values used for isolated degradation-type testing are reasonable starting values and were not fitted to an exactly separable real speckle/Gaussian decomposition.
+- **Statistical significance:** Results are from single training runs; small differences (0.01–0.1 dB) are not tested across multiple seeds.
+- **Reduced-scale ablation:** Favored the simpler baseline at a small scale.
+- **External comparison:** No end-to-end comparison against external architectures (e.g., Restormer, SwinIR).
+- **Deployment:** ONNX export and TensorRT conversion are not implemented.
+- **Mixture Usage:** The corrected LDMH component usage is not perfectly uniform (≈ 19% / 40% / 41%).
 
 ---
 
@@ -714,7 +658,6 @@ For the complete scientific investigation, statistical derivations, model formul
 
 ```
 Documents/Research.docx
-
 ```
 
 Relevant experiment notebooks:
@@ -727,7 +670,6 @@ notebooks/06_Ablation_Study.ipynb
 notebooks/07_Comparison_and_OOD.ipynb
 notebooks/08_Visualization.ipynb
 notebooks/09_Inference_Benchmark.ipynb
-
 ```
 
 ---
@@ -746,4 +688,8 @@ notebooks/09_Inference_Benchmark.ipynb
    **"Regression Analysis when the Dependent Variable is Truncated Normal,"** Econometrica, 1973.
 6. **KLA Hackathon Problem Statement and provided GT + NoisyLR paired dataset.**
 
-```
+---
+
+<div align="center">
+  <i>Developed with ❤️ for KLA Hackathon 2026</i>
+</div>
