@@ -239,13 +239,11 @@ Semi conductor image paper/
 │   └── Quick_Load_And_Predict.ipynb             # minimal load-model-and-predict example
 |
 ├── results/                    # checkpoints, logs, CSVs, figures (created at runtime)
-├── Test_NoisyLR/                # KLA-provided unlabeled competition test set
-├── train/                       # KLA-provided paired training data (GT + NoisyLR)
+|
 ├── inference.py                # standalone CLI inference script (the judged deliverable)
-├── INSTALLATION.md              # library and hardware setup (CPU / GPU / H100)
-├── MODEL_USAGE_GUIDE.md          # detailed usage guide for loading and running the model
+|
 ├── README.md                    # this file
-├── data.zip                      # raw provided dataset archive
+|
 │
 ├── 01_Data_Analysis-1.py                              # early/exploratory: superseded by
 ├── 01_Data_Analysis_2.ipynb                            #   notebooks/03_Local_Distribution_
