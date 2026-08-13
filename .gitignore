@@ -19,7 +19,7 @@ data.zip
 
 # Training and testing data
 train/
-test_noisy/
+test_NoisyLR/
 #
 
 # TensorBoard
