@@ -1,4 +1,3 @@
-`
 # KnowHow — Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images
 
 ### A Statistical Investigation and Corrected Mixture-Density Restoration Network
