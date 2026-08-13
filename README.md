@@ -245,7 +245,7 @@ pip freeze > requirements.txt
 The exact hardware/software setup and NVIDIA GPU installation instructions are documented in:
 
 ```
-Documents/INSTALLATION.md
+Documents/ENVIRONMENT_SETUP.md
 
 ```
 
@@ -262,6 +262,21 @@ The competition's final inference benchmark is performed by KLA on its evaluatio
 
 ---
 
+## Optional interactive prediction
+
+For a quick visual check of a single image, use:
+
+`notebooks/Quick_Load_And_Predict.ipynb`
+
+The notebook provides a self-contained cell for:
+
+- loading the trained checkpoint,
+- loading a `.npy`, `.png`, `.jpg`, or `.jpeg` image,
+- running restoration,
+- displaying the degraded and restored images side by side.
+
+This notebook is optional and is not part of the standalone evaluation pipeline.
+
 # 7. Repository Structure
 
 ```
@@ -270,9 +285,10 @@ KnowHow-KLA-Restoration/
 ├── README.md
 ├── requirements.txt
 ├── inference.py
+├── Documents/Research.docx
 │
 ├── Documents/
-│   ├── INSTALLATION.md
+│   ├── ENVIRONMENT_SETUP.md
 │   ├── MODEL_USAGE_GUIDE.md
 │   └── Research.docx
 │
@@ -319,7 +335,10 @@ KnowHow-KLA-Restoration/
 | `notebooks/06_Ablation_Study.ipynb`      | Controlled ablation experiments            |
 | `notebooks/07_Comparison_and_OOD.ipynb`  | Robustness and OOD experiments             |
 | `notebooks/09_Inference_Benchmark.ipynb` | Inference efficiency experiments           |
+| `Documents/ENVIRONMENT_SETUP.md`              | Environment and hardware setup            |
+| `Documents/MODEL_USAGE_GUIDE.md`         | Detailed inference usage and troubleshooting            |
 | `Documents/Research.docx`                | Detailed research documentation            |
+| `notebooks/Quick_Load_And_Predict.ipynb` | Optional single-image interactive restoration demo            |
 
 ---
 

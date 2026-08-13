@@ -1,4 +1,4 @@
-# Installation Guide
+# Environment Setup Guide
 
 ## Requirements
 ---
