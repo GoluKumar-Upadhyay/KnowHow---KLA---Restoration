@@ -728,5 +728,3 @@ notebooks/09_Inference_Benchmark.ipynb
 6. **KLA Hackathon Problem Statement and provided GT + NoisyLR paired dataset.**
 
 ```
-
-**One correction before you commit this:** keep the `Input`/`Output` specification only if the actual KLA files and your `inference.py` confirm `.npy`, `float32`, and the stated ranges. Those are implementation details, so they should match the code exactly rather than merely the README.
