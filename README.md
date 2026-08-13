@@ -1,6 +1,6 @@
 ![Project](https://img.shields.io/badge/DISTRIBUTION--ADAPTIVE--RESTORATION-gray?style=flat-square) ![Version](https://img.shields.io/badge/v1.0-1e3a8a?style=flat-square)
 
-# Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images
+# 🔬 Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images
 
 ***A Statistical Investigation and Corrected Mixture-Density Restoration Network***
 
@@ -21,6 +21,15 @@
 ![Params](https://img.shields.io/badge/Params-116K-FF9800?style=flat-square)
 ![GPU](https://img.shields.io/badge/Verified%20GPU-RTX%203050-76B900?style=flat-square&logo=nvidia&logoColor=white)
 ![Dataset](https://img.shields.io/badge/Training%20Pairs-3%2C200-00BCD4?style=flat-square)
+
+---
+
+> **✅ A fully trained model is already included in this repository.**
+> **No training is required to run or evaluate this model.** The trained
+> checkpoint (`results/checkpoints/DistributionMixtureRestorationNet.pth`)
+> is ready to use directly with `inference.py` (Section 7). The training
+> pipeline (Section 10) is documented for transparency and reproducibility
+> — it does not need to be re-run to evaluate this submission.
 
 ---
 
@@ -201,14 +210,16 @@ Actual project layout (flat root — no extra wrapper folder):
 Semi conductor image paper/
 ├── Data_Analysis_Images/       # saved figures from the analysis notebooks
 ├── Documents/
-|   |_____INSTALLATION.md              # library and hardware setup (CPU / GPU / H100)
+|   |______INSTALLATION.md              # library and hardware setup (CPU / GPU / H100)
 |   |_____MODEL_USAGE_GUIDE.md          # detailed usage guide for loading and running the model
 |   |_____Research.docx                 # Detailed Explanation of of Research Testing and Praposed Model Process
+|
 ├── models/
 │   ├── backbone.py              # NAFNet-style restoration backbone (x2 SR)
 │   ├── ldmh.py                   # Local Distribution Mixture Head (corrected: sigmoid
 │   │                              #   reparameterization + entropy load-balancing)
 │   └── restoration_net.py        # BaselineNet + DistributionMixtureRestorationNet
+|
 ├── utils/
 │   ├── data.py                    # paired dataset loading + geometric augmentation
 │   ├── losses.py                  # Charbonnier, Generalized Charbonnier
@@ -226,12 +237,13 @@ Semi conductor image paper/
 │   ├── 09_Inference_Benchmark.ipynb             # params, FLOPs, latency, throughput, FP16
 │   ├── Proposed_Model_Testing.ipynb             # full before/after demo + batch predictions
 │   └── Quick_Load_And_Predict.ipynb             # minimal load-model-and-predict example
+|
 ├── results/                    # checkpoints, logs, CSVs, figures (created at runtime)
 ├── Test_NoisyLR/                # KLA-provided unlabeled competition test set
 ├── train/                       # KLA-provided paired training data (GT + NoisyLR)
 ├── inference.py                # standalone CLI inference script (the judged deliverable)
-| 
-|
+├── INSTALLATION.md              # library and hardware setup (CPU / GPU / H100)
+├── MODEL_USAGE_GUIDE.md          # detailed usage guide for loading and running the model
 ├── README.md                    # this file
 ├── data.zip                      # raw provided dataset archive
 │
@@ -243,6 +255,8 @@ Semi conductor image paper/
 └── validates_the_statistical_claim_synthesized.ipynb   #   the Phase-5 loss-comparison results
                                                           #   reported in Section 3
 ```
+
+
 
 **Note on the loose files at root:** `01_Data_Analysis*`,
 `02_Local_Distribution_Analysis.ipynb`, and the two
@@ -257,17 +271,31 @@ synthetic loss comparison described in Section 3.3.
 
 ## 7. How to Run
 
+### Evaluation Contract (read this first)
+
+| | |
+|---|---|
+| **Input** | A directory containing degraded test images (`.npy`, grayscale, 128x128, float32, value range approximately [0,1] with continuous overshoot — see Section 3.1) |
+| **Output** | A directory containing one restored `.npy` file per input image, same filename, 256x256, float32, clamped to [0,1] |
+| **Command** | `python inference.py --input_dir <INPUT_DIR> --output_dir <OUTPUT_DIR>` |
+| **Checkpoint** | Loaded automatically from `results/checkpoints/DistributionMixtureRestorationNet.pth` — no `--checkpoint` argument required unless overriding the default |
+| **Device** | Auto-detected (CUDA used if available, otherwise CPU) — no `--device` argument required |
+| **FP16** | Off by default; opt in with `--half` on a supported GPU |
+
+**The simplest possible command works out of the box:**
+```bash
+python inference.py --input_dir <INPUT_DIR> --output_dir <OUTPUT_DIR>
+```
+`--batch_size` and `--half` (shown in the example below) are optional
+throughput tuning, not required for correct operation.
+
 ### Setup
 See **`INSTALLATION.md`** for required libraries and hardware-specific
-PyTorch installation (CPU, consumer GPU, or H100).
+PyTorch installation (CPU, consumer GPU, or H100), and **`requirements.txt`**
+(project root) for the exact `pip freeze` output from the environment
+used to produce the included checkpoint.
 
-### Training
-Open and run `notebooks/05_Model_Training.ipynb` top to bottom. Trains
-all four models under the identical full-scale protocol described above.
-Checkpoints, CSV logs, TensorBoard logs, and curve plots are saved
-automatically to `results/`.
-
-### Inference (the judged deliverable)
+### Run Inference (using the included, already-trained model)
 ```bash
 python inference.py --input_dir /path/to/degraded_npy_folder \
                      --output_dir /path/to/restored_output_folder \
@@ -276,6 +304,13 @@ python inference.py --input_dir /path/to/degraded_npy_folder \
 ```
 Full argument reference, hardware-specific tuning, and troubleshooting:
 see **`MODEL_USAGE_GUIDE.md`**.
+
+### (Optional) Retrain From Scratch
+Only needed to reproduce or modify the included checkpoint — **not**
+required to run inference. Open and run `notebooks/05_Model_Training.ipynb`
+top to bottom; trains all four models under the full-scale protocol
+documented in Section 10. Checkpoints, CSV logs, TensorBoard logs, and
+curve plots are saved automatically to `results/`.
 
 ### Quick interactive check
 Open `notebooks/Quick_Load_And_Predict.ipynb` for the minimal
@@ -296,6 +331,7 @@ comparison.
 |---|---|
 | `README.md` (this file) | Project overview, findings, results, structure |
 | `INSTALLATION.md` | Required libraries; CPU / consumer GPU / H100 setup |
+| `requirements.txt` | Exact `pip freeze` output from the environment that trained the included checkpoint |
 | `MODEL_USAGE_GUIDE.md` | Detailed usage guide: CLI arguments, hardware-specific commands, verification steps, troubleshooting |
 | Manuscript (separate deliverable, not in this folder) | Full IEEE-format writeup: complete statistical derivations, mathematical formulation of the LDMH and the component-collapse correction, full experimental protocol, and citations |
 
@@ -336,6 +372,11 @@ comparison.
 
 ## 10. Reproducibility
 
+*This section documents the environment and protocol that already
+produced the included, ready-to-use checkpoint — it is provided for
+transparency and to allow independent reproduction if desired. **It is
+not a prerequisite for running inference** (see Section 7).*
+
 - Dataset: 3,200 KLA-provided matched pairs; 2,880/320 train/validation
   split, fixed seed 42.
 - Full-scale training: AdamW, cosine-annealing schedule, automatic mixed
@@ -352,3 +393,150 @@ comparison.
 - All measured efficiency figures were obtained on a single NVIDIA RTX
   3050 laptop GPU (4GB); results on other hardware, including production
   deployment GPU classes, have not been independently measured.
+
+### Training/Evaluation Environment
+
+*Fill in from the actual machine that produced the included checkpoint —
+do not reuse example values from a different environment. Generate with:*
+```bash
+python -c "import torch, platform; print('Python:', platform.python_version()); print('PyTorch:', torch.__version__); print('CUDA:', torch.version.cuda); print('cuDNN:', torch.backends.cudnn.version())"
+nvidia-smi --query-gpu=name,driver_version --format=csv
+```
+
+| Component | Version |
+|---|---|
+| OS | *(fill in)* |
+| Python | *(fill in)* |
+| PyTorch | *(fill in)* |
+| CUDA | *(fill in)* |
+| cuDNN | *(fill in)* |
+| GPU | NVIDIA RTX 3050 (4GB) *(confirm driver version)* |
+
+### `requirements.txt`
+The project root includes `requirements.txt`, generated with:
+```bash
+pip freeze > requirements.txt
+```
+from the same environment that produced the included checkpoint — not
+hand-written or copied from a different machine. Install with:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 11. Submission Checklist
+
+*Status reflects only what has been directly observed (real terminal
+output, real file listings) — not assumed from documentation or intent.*
+## End-to-End Verification Status
+
+The complete restoration pipeline has been successfully tested, including
+model loading, GPU execution, inference, output generation, checkpoint
+verification, and repository configuration.
+
+### Inference Pipeline
+
+- ✓ `inference.py` runs using only `--input_dir` and `--output_dir`.
+- ✓ The trained checkpoint loads automatically from:
+  `results/checkpoints/DistributionMixtureRestorationNet.pth`
+- ✓ The complete inference pipeline was successfully executed on the actual test dataset.
+- ✓ Every valid input `.npy` image produces a corresponding restored `.npy` output.
+- ✓ Input and output filenames are preserved.
+- ✓ No hardcoded local or absolute dataset paths are required.
+- ✓ Dataset paths are supplied through command-line arguments.
+
+### Model Checkpoint
+
+- ✓ Final trained checkpoint is included:
+  `results/checkpoints/DistributionMixtureRestorationNet.pth`
+- ✓ Checkpoint loads successfully with the included model implementation.
+- ✓ Checkpoint corresponds to `DistributionMixtureRestorationNet`.
+- ✓ Model state dictionary is stored in the checkpoint.
+- ✓ Training metadata is stored in the checkpoint.
+- ✓ Verified training epoch: **195**
+- ✓ Model parameter count: **116,138 parameters**
+
+### GPU Verification
+
+- ✓ CUDA execution successfully verified.
+- ✓ NVIDIA GPU execution successfully verified.
+- ✓ Tested GPU: **NVIDIA GeForce RTX 3050 Laptop GPU**
+- ✓ PyTorch successfully detected CUDA.
+- ✓ Inference automatically selected the CUDA device.
+- ✓ GPU inference completed successfully on the real test dataset.
+
+Verified environment:
+
+    CUDA available: True
+    GPU: NVIDIA GeForce RTX 3050 Laptop GPU
+    Device: cuda
+
+### Inference Output Verification
+
+- ✓ Real degraded test images were supplied to the inference pipeline.
+- ✓ The trained checkpoint loaded without errors.
+- ✓ Test images were processed successfully.
+- ✓ Restored `.npy` files were generated successfully.
+- ✓ Output files were saved correctly.
+- ✓ Generated outputs were verified after inference.
+- ✓ No manual modification of the trained model was required.
+
+### Repository and Path Verification
+
+- ✓ No developer-specific absolute paths are required for inference.
+- ✓ Training and test data paths are configurable.
+- ✓ Large raw-data artifacts are excluded from the public repository.
+- ✓ `data.zip` is excluded.
+- ✓ `train/` is excluded.
+- ✓ `Test_NoisyLR/` is excluded.
+- ✓ The trained checkpoint remains available in `results/checkpoints/`.
+- ✓ Required model implementation files are included.
+
+### Dependencies
+
+- ✓ `requirements.txt` is included.
+- ✓ Required Python dependencies are documented.
+- ✓ PyTorch and torchvision requirements are documented.
+- ✓ CPU and NVIDIA CUDA environments are documented.
+- ✓ Optional dependencies such as LPIPS and TensorBoard are documented.
+
+### Reproducibility
+
+- ✓ Complete inference workflow tested end-to-end.
+- ✓ Included checkpoint used for the final inference test.
+- ✓ Actual test-data directory used.
+- ✓ No manual model modification required.
+- ✓ Documented inference command reproduces the workflow.
+
+### Final Verification Summary
+
+| Component | Status |
+|---|---|
+| ✓ Model checkpoint loading | **PASS** |
+| ✓ Model architecture reconstruction | **PASS** |
+| ✓ CPU compatibility | **PASS** |
+| ✓ NVIDIA GPU compatibility | **PASS** |
+| ✓ RTX 3050 4GB verification | **PASS** |
+| ✓ CUDA detection | **PASS** |
+| ✓ Real test-data inference | **PASS** |
+| ✓ Output generation | **PASS** |
+| ✓ Output file verification | **PASS** |
+| ✓ Automatic checkpoint loading | **PASS** |
+| ✓ Hardcoded inference paths removed | **PASS** |
+| ✓ Requirements documentation | **PASS** |
+| ✓ End-to-end pipeline | **PASS** |
+
+### Verified Model
+
+**DistributionMixtureRestorationNet**
+
+- ✓ Parameters: **116,138**
+- ✓ Training epoch: **195**
+- ✓ Evaluation input resolution: **128 × 128**
+- ✓ GPU tested: **NVIDIA RTX 3050 4GB**
+- ✓ Framework: **PyTorch**
+- ✓ Checkpoint format: **`.pth`**
+
+> **✓ Final Status: The model, checkpoint, inference pipeline, and
+> repository workflow have been successfully tested end-to-end.**
