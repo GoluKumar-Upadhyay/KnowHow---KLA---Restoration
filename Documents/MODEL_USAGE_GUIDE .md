@@ -4,7 +4,7 @@
 degraded semiconductor inspection images.
 
 This guide explains how to load, run, and verify the trained model on
-CPU and NVIDIA GPU systems. Complete `INSTALLATION.md` first.
+CPU and NVIDIA GPU systems. Complete `ENVIRONMENT_SETUP.md` first.
 
 ---
 
@@ -237,7 +237,7 @@ print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'C
 ```
 Expect `CUDA available: True` and a real GPU name. If `False` on a
 GPU-equipped machine, reinstall PyTorch using the CUDA-enabled command
-in `INSTALLATION.md`.
+in `ENVIRONMENT_SETUP.md`.
 
 ---
 
@@ -247,7 +247,7 @@ in `INSTALLATION.md`.
 |---|---|---|
 | `ModuleNotFoundError: No module named 'models'` | Script run from the wrong directory | Run `inference.py` from the project root |
 | `No .npy files found in <dir>` | Input path wrong or empty | Verify the path exists and contains `.npy` files |
-| `CUDA available: False` on a GPU machine | CPU-only PyTorch build installed | Reinstall using the CUDA command in `INSTALLATION.md` |
+| `CUDA available: False` on a GPU machine | CPU-only PyTorch build installed | Reinstall using the CUDA command in `ENVIRONMENT_SETUP.md` |
 | CUDA out-of-memory | Batch size too large for available VRAM | Reduce `--batch_size` |
 | Very slow GPU inference | Small batch size or FP32-only | Increase `--batch_size`; add `--half` if supported |
 | Checkpoint load error / key mismatch | Model code version doesn't match checkpoint | Ensure `models/ldmh.py` matches the version used to train this checkpoint |
