@@ -333,7 +333,7 @@ comparison.
 | `INSTALLATION.md` | Required libraries; CPU / consumer GPU / H100 setup |
 | `requirements.txt` | Exact `pip freeze` output from the environment that trained the included checkpoint |
 | `MODEL_USAGE_GUIDE.md` | Detailed usage guide: CLI arguments, hardware-specific commands, verification steps, troubleshooting |
-| Manuscript (separate deliverable, not in this folder) | Full IEEE-format writeup: complete statistical derivations, mathematical formulation of the LDMH and the component-collapse correction, full experimental protocol, and citations |
+|  `Research.docx` | Details Research paper on this praposed model and tatisitcal test |
 
 ---
 
@@ -394,23 +394,8 @@ not a prerequisite for running inference** (see Section 7).*
   3050 laptop GPU (4GB); results on other hardware, including production
   deployment GPU classes, have not been independently measured.
 
-### Training/Evaluation Environment
 
-*Fill in from the actual machine that produced the included checkpoint —
-do not reuse example values from a different environment. Generate with:*
-```bash
-python -c "import torch, platform; print('Python:', platform.python_version()); print('PyTorch:', torch.__version__); print('CUDA:', torch.version.cuda); print('cuDNN:', torch.backends.cudnn.version())"
-nvidia-smi --query-gpu=name,driver_version --format=csv
-```
 
-| Component | Version |
-|---|---|
-| OS | *(fill in)* |
-| Python | *(fill in)* |
-| PyTorch | *(fill in)* |
-| CUDA | *(fill in)* |
-| cuDNN | *(fill in)* |
-| GPU | NVIDIA RTX 3050 (4GB) *(confirm driver version)* |
 
 ### `requirements.txt`
 The project root includes `requirements.txt`, generated with:
@@ -538,5 +523,3 @@ Verified environment:
 - ✓ Framework: **PyTorch**
 - ✓ Checkpoint format: **`.pth`**
 
-> **✓ Final Status: The model, checkpoint, inference pipeline, and
-> repository workflow have been successfully tested end-to-end.**
