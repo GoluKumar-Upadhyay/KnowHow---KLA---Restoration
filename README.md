@@ -77,8 +77,8 @@ The repository is designed so that the submitted model can be evaluated without 
 ## 3.1 Clone the repository
 
 ```
-git clone https://github.com/GoluKumar-Upadhyay/KnowHow---KLA---Restoration.git
-cd KnowHow---KLA---Restoration
+git clone https://github.com/GoluKumar-Upadhyay/KnowHow-KLA-Restoration.git
+cd KnowHow-KLA-Restoration
 
 ```
 
@@ -265,7 +265,7 @@ The competition's final inference benchmark is performed by KLA on its evaluatio
 # 7. Repository Structure
 
 ```
-KnowHow---KLA---Restoration/
+KnowHow-KLA-Restoration/
 │
 ├── README.md
 ├── requirements.txt
