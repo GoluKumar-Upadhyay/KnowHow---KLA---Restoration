@@ -1,523 +1,695 @@
-![Project](https://img.shields.io/badge/DISTRIBUTION--ADAPTIVE--RESTORATION-gray?style=flat-square) ![Version](https://img.shields.io/badge/v1.0-1e3a8a?style=flat-square)
-
-# 🔬 Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images
-
-***A Statistical Investigation and Corrected Mixture-Density Restoration Network***
-
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-Array%20Ops-013243?style=flat-square&logo=numpy&logoColor=white)
-![SciPy](https://img.shields.io/badge/SciPy-Distribution%20Fitting-8CAAE6?style=flat-square&logo=scipy&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?style=flat-square&logo=pandas&logoColor=white)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-Visualization-11557C?style=flat-square&logo=plotly&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626?style=flat-square&logo=jupyter&logoColor=white)
-![NVIDIA CUDA](https://img.shields.io/badge/NVIDIA-CUDA%20GPU-76B900?style=flat-square&logo=nvidia&logoColor=white)
-![TensorBoard](https://img.shields.io/badge/TensorBoard-Training%20Logs-FF6F00?style=flat-square&logo=tensorflow&logoColor=white)
-![LPIPS](https://img.shields.io/badge/LPIPS-Perceptual%20Metric-9C27B0?style=flat-square)
-
-![Task](https://img.shields.io/badge/Task-Image%20Restoration-673AB7?style=flat-square)
-![Models](https://img.shields.io/badge/Models%20Trained-4-4CAF50?style=flat-square)
-![Degradations](https://img.shields.io/badge/Degradation%20Types-3-2196F3?style=flat-square)
-![Params](https://img.shields.io/badge/Params-116K-FF9800?style=flat-square)
-![GPU](https://img.shields.io/badge/Verified%20GPU-RTX%203050-76B900?style=flat-square&logo=nvidia&logoColor=white)
-![Dataset](https://img.shields.io/badge/Training%20Pairs-3%2C200-00BCD4?style=flat-square)
+<div align="center">
+  <h1>🔍 KnowHow</h1>
+  <h3>Distribution-Adaptive Restoration of Degraded Semiconductor Inspection Images</h3>
+  <p><i>A Statistical Investigation and Corrected Mixture-Density Restoration Network</i></p>
+  
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python" />
+    <img src="https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg" alt="PyTorch" />
+    <img src="https://img.shields.io/badge/Task-Image%20Restoration-brightgreen" alt="Task" />
+    <img src="https://img.shields.io/badge/Hackathon-KLA%202026-orange" alt="Hackathon" />
+  </p>
+</div>
 
 ---
 
-> **✅ A fully trained model is already included in this repository.**
-> **No training is required to run or evaluate this model.** The trained
-> checkpoint (`results/checkpoints/DistributionMixtureRestorationNet.pth`)
-> is ready to use directly with `inference.py` (Section 7). The training
-> pipeline (Section 10) is documented for transparency and reproducibility
-> — it does not need to be re-run to evaluate this submission.
+## 1. Overview
+
+KnowHow is a research-driven image restoration solution developed for the **KLA Hackathon 2026 — AI-Based Restoration of Degraded Images for Semiconductor Inspection**.
+
+The task is to restore degraded semiconductor inspection images affected by:
+
+- Speckle noise
+- Additive Gaussian noise
+- Spatial downsampling
+
+The provided degraded image is **128 × 128**, while the corresponding clean ground-truth image is **256 × 256**.
+
+The objective is to reconstruct a clean, high-resolution image while maintaining restoration quality, generalization to unseen structures, and practical inference efficiency.
+
+No defect labels are provided or required. This is a **pure image restoration task**.
 
 ---
 
-Restoration of semiconductor inspection images degraded by speckle noise,
-additive Gaussian noise, and spatial downsampling — built as an
-evidence-first research project: every architectural and loss-function
-decision below follows a corresponding statistical test on the real data,
-not convention or assumption.
+# 2. Final Solution
 
----
-
-## 1. Problem Statement
-
-**Task (KLA challenge):** restore degraded semiconductor inspection
-images. Input is a grayscale image (128x128) affected by speckle noise,
-additive Gaussian noise, and downsampling relative to a clean
-ground-truth image (256x256). Output must be a clean, super-resolved
-image matching the ground truth as closely as possible. The model must
-(a) generalize to structures not seen during training, and (b) be fast at
-inference — explicitly benchmarked by the challenge.
-
-No defect labels are provided or required — this is a pure image
-restoration task, not defect detection.
-
----
-
-## 2. Approach
-
-Rather than assuming a standard denoising loss (L2/L1) would work, we
-measured the **actual noise distribution in the real data** before
-choosing an architecture or loss function, tested an initial hypothesis
-against the evidence, revised it when the evidence disagreed, and only
-then built and trained a model — then diagnosed and corrected a real
-implementation bug discovered during that training, using the same
-evidence-first discipline.
-
----
-
-## 3. Key Findings
-
-### 3.1 Censored-observation hypothesis — tested and rejected
-An initial hypothesis treated "values exceeding the true image range" as
-sensor clipping (a Tobit censored-regression problem). A direct
-diagnostic on the real degraded images (pixel-value histograms, per-image
-maximum clustering, exact-maximum pixel pile-up) found **no clipping
-signature**: per-image maxima vary continuously, with no pile-up at any
-repeated ceiling. This hypothesis was abandoned rather than forced onto
-the data.
-
-### 3.2 Global residual distribution — heavy-tailed, not Gaussian
-Four candidate distributions (Gaussian, Laplace, Student-t, Generalized
-Gaussian) were fit by maximum likelihood to the true residual
-(`NoisyLR - downsampled(GT)`) over 6,553,600 pixels from 400 matched
-pairs. The Generalized Gaussian fit (**beta = 0.845**) achieved the best
-AIC by a decisive margin (~54,700 better than the next-best fit);
-Gaussian was the worst of the four candidates.
-
-### 3.3 Local (per-patch) analysis — the pivotal discovery
-Fitting beta independently on 51,200 valid 32x32 patches across the
-**full** 3,200-pair training set gave a local mean beta of **1.451**
-(std 0.428) — substantially different from the global pooled value of
-0.845. A one-way ANOVA confirmed this spatial variation is highly
-significant (**F = 18.06, p < 1e-300**), and local beta correlates
-significantly with edge density (r = -0.388), local variance
-(r = -0.550), and entropy (r = -0.430), all p < 1e-300.
-
-**This finding drove the architecture:** the apparent global
-heavy-tailedness is, in part, a statistical artifact of pooling
-spatially heterogeneous local noise regimes — motivating a model that
-estimates the local mixture directly, rather than applying one fixed
-global assumption.
-
-### 3.4 A real implementation bug: mixture-component collapse
-An initial trained implementation of the proposed model was directly
-inspected and found to have collapsed: two of three learned mixture
-components converged to an identical, non-heavy-tailed value
-(`beta = 3.0`, the clamp boundary), and one component was completely
-unused (0% usage). This was traced, via direct gradient analysis, to a
-**zero-gradient region in a hard `clamp()` operation** — once two
-components' pre-clamp values exceeded the boundary simultaneously, no
-loss term, including a diversity penalty specifically designed to
-prevent this, could separate them again, since the diversity penalty's
-own gradient was also blocked by the clamp.
-
-**Fix:** replaced the hard clamp with a smooth sigmoid reparameterization
-(never fully saturates, so gradient never reaches exactly zero) and
-added an entropy-based load-balancing penalty (stronger than the
-mean-squared-error version tested first, which proved insufficient in
-two independent runs). Both models were retrained from scratch on real
-GPU hardware; the corrected models converged to a stable, non-degenerate
-configuration (beta approximately [1.76, 2.20, 2.50], usage approximately
-[0.19, 0.40, 0.41]) sustained from roughly epoch 60 through epoch 200
-with no further collapse.
-
----
-
-## 4. Final Solution
-
-**Architecture:** `DistributionMixtureRestorationNet` = Local
-Distribution Mixture Head (LDMH, predicts a per-pixel soft mixture over
-K=3 learned Generalized-Gaussian prototypes) → FiLM feature conditioning
-→ a compact NAFNet-style backbone (activation-free blocks, PixelShuffle
-x2 upsampling for the 128→256 super-resolution) → restored image.
-
-**Loss:** mixture Generalized-Gaussian negative log-likelihood + a
-Charbonnier reconstruction term + a beta-diversity penalty + an
-entropy-based load-balancing penalty (the last two added as the
-component-collapse correction, Section 3.4).
-
-**Four models trained** under an identical full-scale protocol (AdamW,
-cosine LR schedule, mixed precision, gradient clipping, early stopping,
-seed=42, batch=8, up to 300 epochs, 2880/320 train/validation split),
-isolating each contribution:
-
-| # | Model | Isolates |
-|---|---|---|
-| 1 | `BaselineNet` | Backbone only, plain Charbonnier loss |
-| 2 | `Baseline_GenCharbonnier` | Backbone only, fixed global heavy-tail loss (beta=0.845) |
-| 3 | `LDMH` | Mixture loss, FiLM conditioning **off** |
-| 4 | `DistributionMixtureRestorationNet` | Mixture loss + FiLM conditioning **on** — proposed final model |
-
-**No public/external dataset was used** — all training and evaluation
-uses only the KLA-provided paired train set (GT + NoisyLR) and the
-unlabeled competition test set.
-
----
-
-## 5. Final Results
-
-### Full-scale training (all four corrected models)
-
-| Model | Best Epoch | PSNR (dB) | SSIM |
-|---|---|---|---|
-| Baseline | 200 | 28.120 | 0.7503 |
-| + Global Gen. Charbonnier | 200 | 28.124 | 0.7511 |
-| LDMH (corrected) | 200 | 28.138 | 0.7519 |
-| **Full (corrected)** | 195 | **28.206** | **0.7533** |
-
-Ordering is monotonic across all four configurations, consistent with
-the design hypothesis: each additional mechanism yields a further,
-modest improvement.
-
-### Per-degradation-type robustness (n=30 held-out images)
-
-| Model | Speckle | Gaussian | Downsample | Combined |
-|---|---|---|---|---|
-| Baseline | 24.580 | 28.096 | 28.449 | 24.218 |
-| + Global GC | 24.635 | **28.203** | **28.649** | **24.256** |
-| LDMH | 24.579 | 28.077 | 28.528 | 24.218 |
-| **Full (corrected)** | **24.661** | 27.989 | 28.307 | 24.241 |
-
-The corrected Full model achieves the best PSNR specifically on the
-**speckle-only** condition — the degradation type most directly connected
-to the multiplicative, heavy-tailed statistics motivating this work. The
-fixed global loss remains strongest overall on 3 of 4 conditions; the
-Full model is weakest on Gaussian-only. Reported candidly as a
-degradation-specific, not uniform, advantage.
-
-### Measured efficiency (NVIDIA RTX 3050, 4GB laptop GPU)
-
-| Model | Params | GFLOPs | GPU (batch=1) | GPU (batch=16, FP16) |
-|---|---|---|---|---|
-| Baseline | 86,945 | 3.898 | 59.33 img/s | 200.84 img/s (1.72x) |
-| Full | 116,138 | 4.844 | 54.89 img/s | 186.15 img/s (1.72x) |
-
-### Out-of-distribution evaluation (10 external microscopy images)
-Mean PSNR 35.87 dB (std 2.64), mean SSIM 0.746 (std 0.025) — external
-Carinthia-S images with synthetic degradation applied, evaluated as
-small-sample supporting evidence, not proof of full domain generalization.
-
----
-
-## 6. Repository Structure
-
-Actual project layout (flat root — no extra wrapper folder):
-
-```
-Semi conductor image paper/
-├── Data_Analysis_Images/       # saved figures from the analysis notebooks
-├── Documents/
-|   |______INSTALLATION.md              # library and hardware setup (CPU / GPU / H100)
-|   |_____MODEL_USAGE_GUIDE.md          # detailed usage guide for loading and running the model
-|   |_____Research.docx                 # Detailed Explanation of of Research Testing and Praposed Model Process
-|
-├── models/
-│   ├── backbone.py              # NAFNet-style restoration backbone (x2 SR)
-│   ├── ldmh.py                   # Local Distribution Mixture Head (corrected: sigmoid
-│   │                              #   reparameterization + entropy load-balancing)
-│   └── restoration_net.py        # BaselineNet + DistributionMixtureRestorationNet
-|
-├── utils/
-│   ├── data.py                    # paired dataset loading + geometric augmentation
-│   ├── losses.py                  # Charbonnier, Generalized Charbonnier
-│   ├── metrics.py                  # PSNR / SSIM (numpy + torch)
-│   └── train.py                    # full training loop (AdamW, cosine LR, AMP, grad
-│                                    #   clipping, early stopping, per-epoch component-
-│                                    #   health logging, TensorBoard, CSV, checkpointing)
-├── notebooks/
-│   ├── 03_Local_Distribution_Analysis.ipynb   # beta-map, ANOVA, correlations
-│   ├── 04_LDMH_Design.ipynb                    # LDMH unit tests (no training)
-│   ├── 05_Model_Training.ipynb                 # trains all 4 models, full protocol
-│   ├── 06_Ablation_Study.ipynb                 # ablation ladder + hard-pixel metric
-│   ├── 07_Comparison_and_OOD.ipynb              # degradation-type robustness + OOD
-│   ├── 08_Visualization.ipynb                   # beta-maps, mixture maps, feature maps
-│   ├── 09_Inference_Benchmark.ipynb             # params, FLOPs, latency, throughput, FP16
-│   ├── Proposed_Model_Testing.ipynb             # full before/after demo + batch predictions
-│   └── Quick_Load_And_Predict.ipynb             # minimal load-model-and-predict example
-|
-├── results/                    # checkpoints, logs, CSVs, figures (created at runtime)
-|
-├── inference.py                # standalone CLI inference script (the judged deliverable)
-|
-├── README.md                    # this file
-|
-│
-├── 01_Data_Analysis-1.py                              # early/exploratory: superseded by
-├── 01_Data_Analysis_2.ipynb                            #   notebooks/03_Local_Distribution_
-├── 01_Data_Analysis_3.ipynb                            #   Analysis.ipynb; kept for history,
-├── 02_Local_Distribution_Analysis.ipynb                #   not part of the current pipeline
-├── validates_the_statistical_claim_original_data.ipynb # early/exploratory: superseded by
-└── validates_the_statistical_claim_synthesized.ipynb   #   the Phase-5 loss-comparison results
-                                                          #   reported in Section 3
-```
-
-
-
-**Note on the loose files at root:** `01_Data_Analysis*`,
-`02_Local_Distribution_Analysis.ipynb`, and the two
-`validates_the_statistical_claim_*` notebooks are earlier exploratory
-versions from before the project was organized into `notebooks/03-09`.
-They are kept for development history but are **not** part of the
-current, judged pipeline — the equivalent, current versions are
-`notebooks/03_Local_Distribution_Analysis.ipynb` and the Phase-5
-synthetic loss comparison described in Section 3.3.
-
----
-
-## 7. How to Run
-
-### Evaluation Contract (read this first)
-
-| | |
-|---|---|
-| **Input** | A directory containing degraded test images (`.npy`, grayscale, 128x128, float32, value range approximately [0,1] with continuous overshoot — see Section 3.1) |
-| **Output** | A directory containing one restored `.npy` file per input image, same filename, 256x256, float32, clamped to [0,1] |
-| **Command** | `python inference.py --input_dir <INPUT_DIR> --output_dir <OUTPUT_DIR>` |
-| **Checkpoint** | Loaded automatically from `results/checkpoints/DistributionMixtureRestorationNet.pth` — no `--checkpoint` argument required unless overriding the default |
-| **Device** | Auto-detected (CUDA used if available, otherwise CPU) — no `--device` argument required |
-| **FP16** | Off by default; opt in with `--half` on a supported GPU |
-
-**The simplest possible command works out of the box:**
-```bash
-python inference.py --input_dir <INPUT_DIR> --output_dir <OUTPUT_DIR>
-```
-`--batch_size` and `--half` (shown in the example below) are optional
-throughput tuning, not required for correct operation.
-
-### Setup
-See **`INSTALLATION.md`** for required libraries and hardware-specific
-PyTorch installation (CPU, consumer GPU, or H100), and **`requirements.txt`**
-(project root) for the exact `pip freeze` output from the environment
-used to produce the included checkpoint.
-
-### Run Inference (using the included, already-trained model)
-```bash
-python inference.py --input_dir /path/to/degraded_npy_folder \
-                     --output_dir /path/to/restored_output_folder \
-                     --batch_size 16 \
-                     --half
-```
-Full argument reference, hardware-specific tuning, and troubleshooting:
-see **`MODEL_USAGE_GUIDE.md`**.
-
-### (Optional) Retrain From Scratch
-Only needed to reproduce or modify the included checkpoint — **not**
-required to run inference. Open and run `notebooks/05_Model_Training.ipynb`
-top to bottom; trains all four models under the full-scale protocol
-documented in Section 10. Checkpoints, CSV logs, TensorBoard logs, and
-curve plots are saved automatically to `results/`.
-
-### Quick interactive check
-Open `notebooks/Quick_Load_And_Predict.ipynb` for the minimal
-load-model → load-image → predict → visualize example, or
-`notebooks/Proposed_Model_Testing.ipynb` for the fuller test suite
-(batch processing, quantitative metrics, multiple examples).
-
-### Efficiency benchmarking
-`notebooks/09_Inference_Benchmark.ipynb` reports parameter count, GFLOPs,
-CPU/GPU latency, batched throughput, GPU peak memory, and an FP32-vs-FP16
-comparison.
-
----
-
-## 8. Documentation Index
-
-| Document | Contents |
-|---|---|
-| `README.md` (this file) | Project overview, findings, results, structure |
-| `INSTALLATION.md` | Required libraries; CPU / consumer GPU / H100 setup |
-| `requirements.txt` | Exact `pip freeze` output from the environment that trained the included checkpoint |
-| `MODEL_USAGE_GUIDE.md` | Detailed usage guide: CLI arguments, hardware-specific commands, verification steps, troubleshooting |
-|  `Research.docx` | Details Research paper on this praposed model and tatisitcal test |
-
----
-
-## 9. Known Limitations
-
-- **Statistical significance across seeds is not established.** All
-  results (Tables in Section 5) come from single training runs per
-  configuration; PSNR/SSIM differences on the order of 0.01–0.1 dB have
-  not been tested for significance across multiple seeds.
-- **The reduced-scale ablation study** (200 pairs, 3 epochs) still favors
-  the simpler fixed-loss baseline over the full proposed model; the
-  full-scale results (Section 5) reverse this ordering, consistent with a
-  training-budget explanation, but a full-scale re-run of this specific
-  ablation has not been performed to confirm it directly.
-- **No comparison against externally-released restoration architectures**
-  (Restormer, SwinIR, NAFNet as officially released, MambaIR) has been
-  completed — only the models built and trained in this repository have
-  been evaluated end-to-end.
-- **Component usage, while no longer collapsing, is not perfectly
-  uniform** (approximately 19%/40%/41% rather than an ideal 33%/33%/33%).
-- **ONNX export, INT8 quantization, and TensorRT conversion** are not
-  implemented in this repository; IoT/edge deployment guidance in
-  `MODEL_USAGE_GUIDE.md` is based on the model's small size, not a verified
-  benchmark on such hardware.
-- One of the competition's own example slides shows a **Blur** step in
-  an illustrative degradation pipeline, not present in the literal stated
-  degradation formula (speckle + downsampling + additive Gaussian). This
-  was flagged during development but not further investigated.
-- `SPECKLE_LOOKS` / `GAUSSIAN_SIGMA` used in the isolated
-  per-degradation-type robustness test (Section 5) are reasonable
-  starting values, not fitted to the exact real speckle/Gaussian split,
-  which is not directly separable from the real mixed data without
-  further assumptions.
-
----
-
-## 10. Reproducibility
-
-*This section documents the environment and protocol that already
-produced the included, ready-to-use checkpoint — it is provided for
-transparency and to allow independent reproduction if desired. **It is
-not a prerequisite for running inference** (see Section 7).*
-
-- Dataset: 3,200 KLA-provided matched pairs; 2,880/320 train/validation
-  split, fixed seed 42.
-- Full-scale training: AdamW, cosine-annealing schedule, automatic mixed
-  precision, gradient-norm clipping, early stopping (patience 30, maximum
-  300 epochs), batch size 8, geometric augmentation (flip/rotation) on
-  the training split only.
-- LDMH hyperparameters: K=3 components, beta range [0.3, 2.5], softmax
-  temperature 1.5, diversity margin 0.3, loss weights
-  (mixture NLL, diversity, load-balance) = (1.0, 0.1, 0.3).
-- Checkpoints record model weights, optimizer state, epoch, best
-  validation PSNR/SSIM, and full per-epoch training history, including
-  per-epoch mixture-component beta values, usage, and minimum pairwise
-  beta distance, for both LDMH-based models.
-- All measured efficiency figures were obtained on a single NVIDIA RTX
-  3050 laptop GPU (4GB); results on other hardware, including production
-  deployment GPU classes, have not been independently measured.
-
-
-
-
-### `requirements.txt`
-The project root includes `requirements.txt`, generated with:
-```bash
-pip freeze > requirements.txt
-```
-from the same environment that produced the included checkpoint — not
-hand-written or copied from a different machine. Install with:
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 11. Submission Checklist
-
-*Status reflects only what has been directly observed (real terminal
-output, real file listings) — not assumed from documentation or intent.*
-## End-to-End Verification Status
-
-The complete restoration pipeline has been successfully tested, including
-model loading, GPU execution, inference, output generation, checkpoint
-verification, and repository configuration.
-
-### Inference Pipeline
-
-- ✓ `inference.py` runs using only `--input_dir` and `--output_dir`.
-- ✓ The trained checkpoint loads automatically from:
-  `results/checkpoints/DistributionMixtureRestorationNet.pth`
-- ✓ The complete inference pipeline was successfully executed on the actual test dataset.
-- ✓ Every valid input `.npy` image produces a corresponding restored `.npy` output.
-- ✓ Input and output filenames are preserved.
-- ✓ No hardcoded local or absolute dataset paths are required.
-- ✓ Dataset paths are supplied through command-line arguments.
-
-### Model Checkpoint
-
-- ✓ Final trained checkpoint is included:
-  `results/checkpoints/DistributionMixtureRestorationNet.pth`
-- ✓ Checkpoint loads successfully with the included model implementation.
-- ✓ Checkpoint corresponds to `DistributionMixtureRestorationNet`.
-- ✓ Model state dictionary is stored in the checkpoint.
-- ✓ Training metadata is stored in the checkpoint.
-- ✓ Verified training epoch: **195**
-- ✓ Model parameter count: **116,138 parameters**
-
-### GPU Verification
-
-- ✓ CUDA execution successfully verified.
-- ✓ NVIDIA GPU execution successfully verified.
-- ✓ Tested GPU: **NVIDIA GeForce RTX 3050 Laptop GPU**
-- ✓ PyTorch successfully detected CUDA.
-- ✓ Inference automatically selected the CUDA device.
-- ✓ GPU inference completed successfully on the real test dataset.
-
-Verified environment:
-
-    CUDA available: True
-    GPU: NVIDIA GeForce RTX 3050 Laptop GPU
-    Device: cuda
-
-### Inference Output Verification
-
-- ✓ Real degraded test images were supplied to the inference pipeline.
-- ✓ The trained checkpoint loaded without errors.
-- ✓ Test images were processed successfully.
-- ✓ Restored `.npy` files were generated successfully.
-- ✓ Output files were saved correctly.
-- ✓ Generated outputs were verified after inference.
-- ✓ No manual modification of the trained model was required.
-
-### Repository and Path Verification
-
-- ✓ No developer-specific absolute paths are required for inference.
-- ✓ Training and test data paths are configurable.
-- ✓ Large raw-data artifacts are excluded from the public repository.
-- ✓ `data.zip` is excluded.
-- ✓ `train/` is excluded.
-- ✓ `Test_NoisyLR/` is excluded.
-- ✓ The trained checkpoint remains available in `results/checkpoints/`.
-- ✓ Required model implementation files are included.
-
-### Dependencies
-
-- ✓ `requirements.txt` is included.
-- ✓ Required Python dependencies are documented.
-- ✓ PyTorch and torchvision requirements are documented.
-- ✓ CPU and NVIDIA CUDA environments are documented.
-- ✓ Optional dependencies such as LPIPS and TensorBoard are documented.
-
-### Reproducibility
-
-- ✓ Complete inference workflow tested end-to-end.
-- ✓ Included checkpoint used for the final inference test.
-- ✓ Actual test-data directory used.
-- ✓ No manual model modification required.
-- ✓ Documented inference command reproduces the workflow.
-
-### Final Verification Summary
-
-| Component | Status |
-|---|---|
-| ✓ Model checkpoint loading | **PASS** |
-| ✓ Model architecture reconstruction | **PASS** |
-| ✓ CPU compatibility | **PASS** |
-| ✓ NVIDIA GPU compatibility | **PASS** |
-| ✓ RTX 3050 4GB verification | **PASS** |
-| ✓ CUDA detection | **PASS** |
-| ✓ Real test-data inference | **PASS** |
-| ✓ Output generation | **PASS** |
-| ✓ Output file verification | **PASS** |
-| ✓ Automatic checkpoint loading | **PASS** |
-| ✓ Hardcoded inference paths removed | **PASS** |
-| ✓ Requirements documentation | **PASS** |
-| ✓ End-to-end pipeline | **PASS** |
-
-### Verified Model
+The submitted model is:
 
 **DistributionMixtureRestorationNet**
 
-- ✓ Parameters: **116,138**
-- ✓ Training epoch: **195**
-- ✓ Evaluation input resolution: **128 × 128**
-- ✓ GPU tested: **NVIDIA RTX 3050 4GB**
-- ✓ Framework: **PyTorch**
-- ✓ Checkpoint format: **`.pth`**
+The model combines:
 
+```text
+Degraded 128 × 128 Image
+          │
+          ▼
+Local Distribution Mixture Head (LDMH)
+          │
+          ▼
+FiLM Feature Conditioning
+          │
+          ▼
+Compact NAFNet-style Restoration Backbone
+          │
+          ▼
+PixelShuffle ×2
+          │
+          ▼
+Restored 256 × 256 Image
+
+````
+
+### Model configuration
+
+- LDMH components: **K = 3**
+- Learned Generalized-Gaussian prototypes
+- FiLM feature conditioning
+- Compact NAFNet-style restoration backbone
+- PixelShuffle ×2 upsampling
+- Parameters: **116,138**
+
+The final trained checkpoint is:
+
+```
+results/checkpoints/DistributionMixtureRestorationNet.pth
+
+```
+
+The checkpoint is included in the repository and is used automatically by `inference.py`.
+
+**Training is not required to run the submitted model.**
+
+---
+
+# 3. Quick Start — Evaluation
+
+The repository is designed so that the submitted model can be evaluated without modifying the source code.
+
+## 3.1 Clone the repository
+
+```
+git clone https://github.com/GoluKumar-Upadhyay/KnowHow-KLA-Restoration.git
+cd KnowHow-KLA-Restoration
+```
+
+## 3.2 Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+`requirements.txt` was generated from the environment used to produce the submitted checkpoint.
+
+## 3.3 Run inference
+
+```
+python inference.py \
+    --input_dir <INPUT_DIRECTORY> \
+    --output_dir <OUTPUT_DIRECTORY>
+```
+
+Example:
+
+```
+python inference.py \
+    --input_dir /path/to/degraded_npy_folder \
+    --output_dir /path/to/restored_output_folder
+```
+
+The script automatically loads:
+
+```
+results/checkpoints/DistributionMixtureRestorationNet.pth
+```
+
+No source-code modification or manual checkpoint-path editing is required.
+
+### Optional inference configuration
+
+```
+python inference.py \
+    --input_dir /path/to/degraded_npy_folder \
+    --output_dir /path/to/restored_output_folder \
+    --batch_size 16 \
+    --half
+```
+
+---
+
+# 4. Evaluation / Inference Pipeline
+
+`inference.py` is the standalone evaluation entry point.
+
+It performs the complete inference pipeline:
+
+```
+Input Directory
+      │
+      ▼
+Load degraded images
+      │
+      ▼
+Preprocessing
+      │
+      ▼
+CPU → GPU
+      │
+      ▼
+Model inference
+      │
+      ▼
+GPU → CPU
+      │
+      ▼
+Post-processing
+      │
+      ▼
+Output Directory
+```
+
+The script:
+
+1. Reads all valid input images from the supplied directory.
+2. Loads the trained checkpoint automatically.
+3. Selects CUDA when an NVIDIA GPU is available.
+4. Performs restoration and 2× super-resolution.
+5. Writes one restored output for each input image.
+6. Preserves input filenames.
+
+---
+
+# 5. Input and Output Specification
+
+## Input
+
+The evaluation pipeline is designed for the KLA degraded test data.
+
+Expected input:
+
+```
+Format: .npy
+Type: float32
+Channels: Grayscale
+Resolution: 128 × 128
+```
+
+The degraded data contains the image degradation described by the challenge:
+
+```
+Speckle noise
++
+Additive Gaussian noise
++
+Spatial downsampling
+```
+
+## Output
+
+For each valid input file, the inference script produces the corresponding restored output:
+
+```
+Input:
+test_001.npy
+
+Output:
+test_001.npy
+```
+
+Output specification:
+
+```
+Format: .npy
+Type: float32
+Resolution: 256 × 256
+Value range: [0, 1]
+```
+
+---
+
+# 6. Environment and Dependencies
+
+The Python package environment used for the submitted model is recorded in:
+
+```
+requirements.txt
+```
+
+It was generated using:
+
+```
+pip freeze > requirements.txt
+```
+
+The exact hardware/software setup and NVIDIA GPU installation instructions are documented in:
+
+```
+Documents/ENVIRONMENT_SETUP.md
+```
+
+Detailed inference usage and troubleshooting are documented in:
+
+```
+Documents/MODEL_USAGE_GUIDE.md
+```
+
+The project was developed and efficiency measurements were performed on an NVIDIA RTX 3050 Laptop GPU with 4 GB VRAM.
+
+The competition's final inference benchmark is performed by KLA on its evaluation H100 GPU.
+
+---
+
+## Optional interactive prediction
+
+For a quick visual check of a single image, use:
+
+`notebooks/Quick_Load_And_Predict.ipynb`
+
+The notebook provides a self-contained cell for:
+
+- loading the trained checkpoint,
+- loading a `.npy`, `.png`, `.jpg`, or `.jpeg` image,
+- running restoration,
+- displaying the degraded and restored images side by side.
+
+This notebook is optional and is not part of the standalone evaluation pipeline.
+
+# 7. Repository Structure
+
+```
+KnowHow-KLA-Restoration/
+│
+├── README.md
+├── requirements.txt
+├── inference.py
+├── Documents/Research.docx                              <-- Detailed research documentation 
+│
+├── Documents/
+│   ├── ENVIRONMENT_SETUP.md
+│   ├── MODEL_USAGE_GUIDE.md
+│   └── Research.docx
+│
+├── models/
+│   ├── backbone.py
+│   ├── ldmh.py
+│   └── restoration_net.py
+│
+├── utils/
+│   ├── data.py
+│   ├── losses.py
+│   ├── metrics.py
+│   └── train.py
+│
+├── notebooks/
+│   ├── 03_Local_Distribution_Analysis.ipynb
+│   ├── 04_LDMH_Design.ipynb
+│   ├── 05_Model_Training.ipynb
+│   ├── 06_Ablation_Study.ipynb
+│   ├── 07_Comparison_and_OOD.ipynb
+│   ├── 08_Visualization.ipynb
+│   ├── 09_Inference_Benchmark.ipynb
+│   ├── Proposed_Model_Testing.ipynb
+│   └── Quick_Load_And_Predict.ipynb
+│
+├── results/
+│   └── checkpoints/
+│       └── DistributionMixtureRestorationNet.pth
+│
+└── Data_Analysis_Images/
+```
+
+### Key files
+
+| File / DirectoryPurpose                  |                                            |
+| ---------------------------------------- | ------------------------------------------ |
+| `inference.py`                           | Standalone evaluation/inference script     |
+| `requirements.txt`                       | Python environment dependencies            |
+| `models/`                                | Restoration model implementation           |
+| `utils/`                                 | Data, loss, metrics and training utilities |
+| `results/checkpoints/`                   | Submitted trained checkpoint               |
+| `notebooks/05_Model_Training.ipynb`      | Training pipeline                          |
+| `notebooks/06_Ablation_Study.ipynb`      | Controlled ablation experiments            |
+| `notebooks/07_Comparison_and_OOD.ipynb`  | Robustness and OOD experiments             |
+| `notebooks/09_Inference_Benchmark.ipynb` | Inference efficiency experiments           |
+| `Documents/ENVIRONMENT_SETUP.md`              | Environment and hardware setup            |
+| `Documents/MODEL_USAGE_GUIDE.md`         | Detailed inference usage and troubleshooting            |
+| `Documents/Research.docx`                | Detailed research documentation            |
+| `notebooks/Quick_Load_And_Predict.ipynb` | Optional single-image interactive restoration demo            |
+
+---
+
+# 8. Training and Reproduction
+
+Training is not required for evaluation because the final checkpoint is included.
+
+The complete training process can be reproduced using:
+
+```
+notebooks/05_Model_Training.ipynb
+```
+
+Four models were trained under the same full-scale protocol:
+
+| ModelConfiguration                  |                                         |
+| ----------------------------------- | --------------------------------------- |
+| `BaselineNet`                       | Backbone + plain Charbonnier loss       |
+| `Baseline_GenCharbonnier`           | Backbone + fixed global heavy-tail loss |
+| `LDMH`                              | Mixture loss + LDMH, FiLM disabled      |
+| `DistributionMixtureRestorationNet` | Mixture loss + LDMH + FiLM              |
+
+### Training configuration
+
+| ParameterConfiguration |                  |
+| ---------------------- | ---------------- |
+| Optimizer              | AdamW            |
+| LR schedule            | Cosine annealing |
+| Mixed precision        | Enabled          |
+| Gradient clipping      | Enabled          |
+| Early stopping         | Patience 30      |
+| Maximum epochs         | 300              |
+| Batch size             | 8                |
+| Seed                   | 42               |
+| Training pairs         | 2,880            |
+| Validation pairs       | 320              |
+| Augmentation           | Flip / rotation  |
+
+### LDMH configuration
+
+| ParameterValue      |            |
+| ------------------- | ---------- |
+| Components          | 3          |
+| Beta range          | [0.3, 2.5] |
+| Softmax temperature | 1.5        |
+| Diversity margin    | 0.3        |
+| Mixture NLL weight  | 1.0        |
+| Diversity weight    | 0.1        |
+| Load-balance weight | 0.3        |
+
+---
+
+# 9. Research Summary
+
+The project followed an **evidence-before-architecture** approach.
+
+Instead of assuming a conventional Gaussian/L1/L2 restoration formulation, the degradation was statistically investigated first.
+
+```
+Real Data
+   ↓
+Hypothesis
+   ↓
+Statistical Analysis
+   ↓
+Finding
+   ↓
+Architecture / Loss Design
+   ↓
+Ablation
+   ↓
+Final Model
+
+```
+
+## 9.1 Censored-observation hypothesis
+
+An initial hypothesis treated values exceeding the true image range as possible sensor clipping.
+
+Analysis of:
+
+- Pixel-value histograms
+- Per-image maximum behavior
+- Exact-maximum pixel pile-up
+
+found no clipping signature.
+
+The hypothesis was therefore rejected.
+
+---
+
+## 9.2 Global residual distribution
+
+The residual was defined as:
+
+```
+Residual = NoisyLR - downsampled(GT)
+```
+
+Four candidate distributions were fitted to:
+
+```
+400 matched image pairs
+6,553,600 residual pixels
+```
+
+Candidates:
+
+- Gaussian
+- Laplace
+- Student-t
+- Generalized Gaussian
+
+The Generalized Gaussian achieved the best AIC with:
+
+```
+β = 0.845
+```
+
+Its AIC was approximately 54,700 better than the next-best candidate.
+
+---
+
+## 9.3 Local distribution analysis
+
+The global distribution was further investigated using per-patch analysis.
+
+Across:
+
+```
+51,200 valid 32 × 32 patches
+```
+
+the estimated local Generalized-Gaussian parameter was:
+
+```
+Mean β = 1.451
+Std β  = 0.428
+```
+
+A one-way ANOVA showed significant spatial variation:
+
+```
+F = 18.06
+p < 1e-300
+```
+
+Local beta also correlated with:
+
+```
+Edge density   r = -0.388
+Local variance r = -0.550
+Entropy        r = -0.430
+```
+
+with:
+
+```
+p < 1e-300
+```
+
+This finding motivated the use of a local mixture-based degradation representation rather than a single fixed global distribution.
+
+---
+
+## 9.4 Mixture-component collapse and correction
+
+An initial implementation of the mixture model collapsed during training.
+
+Two components converged to the clamp boundary:
+
+```
+β = 3.0
+```
+
+and one component became unused.
+
+Direct gradient analysis identified a zero-gradient region caused by the hard `clamp()` operation.
+
+The correction replaced the hard clamp with:
+
+```
+Smooth sigmoid reparameterization
+```
+
+and introduced:
+
+```
+Entropy-based load balancing
+```
+
+The corrected model converged to:
+
+```
+β ≈ [1.76, 2.20, 2.50]
+
+Usage ≈ [0.19, 0.40, 0.41]
+```
+
+with stable behavior from approximately epoch 60 through epoch 200.
+
+---
+
+# 10. Final Results
+
+## Full-scale validation
+
+| ModelBest EpochPSNR (dB)SSIM     |         |            |            |
+| -------------------------------- | ------- | ---------- | ---------- |
+| Baseline                         | 200     | 28.120     | 0.7503     |
+| + Global Generalized Charbonnier | 200     | 28.124     | 0.7511     |
+| LDMH (corrected)                 | 200     | 28.138     | 0.7519     |
+| **Full (corrected)**             | **195** | **28.206** | **0.7533** |
+
+The full corrected model achieved the highest PSNR and SSIM among the four tested configurations under the full-scale training protocol.
+
+---
+
+# 11. Per-Degradation-Type Robustness
+
+Evaluation was performed on 30 held-out images.
+
+| ModelSpeckleGaussianDownsampleCombined |            |            |            |            |
+| -------------------------------------- | ---------- | ---------- | ---------- | ---------- |
+| Baseline                               | 24.580     | 28.096     | 28.449     | 24.218     |
+| + Global GC                            | 24.635     | **28.203** | **28.649** | **24.256** |
+| LDMH                                   | 24.579     | 28.077     | 28.528     | 24.218     |
+| **Full (corrected)**                   | **24.661** | 27.989     | 28.307     | 24.241     |
+
+The corrected Full model achieved the highest PSNR on the speckle-only condition.
+
+The fixed global loss remained strongest on three of the four tested conditions. Therefore, the advantage of the proposed model is reported as **degradation-specific rather than uniform**.
+
+---
+
+# 12. Inference Efficiency
+
+Measured on:
+
+```
+NVIDIA RTX 3050 Laptop GPU
+4 GB VRAM
+```
+
+| ModelParametersGFLOPsBatch 1Batch 16 FP16 |         |       |             |              |
+| ----------------------------------------- | ------- | ----- | ----------- | ------------ |
+| Baseline                                  | 86,945  | 3.898 | 59.33 img/s | 200.84 img/s |
+| Full                                      | 116,138 | 4.844 | 54.89 img/s | 186.15 img/s |
+
+Batch-16 FP16 throughput was approximately **1.72×** batch-1 throughput for both models.
+
+These are local RTX 3050 measurements. They are **not H100 benchmark results**.
+
+---
+
+# 13. OOD Supporting Evaluation
+
+A supporting OOD experiment was performed on:
+
+```
+10 external microscopy images
+```
+
+from the Carinthia-S dataset with synthetic degradation applied.
+
+Results:
+
+```
+Mean PSNR = 35.87 dB
+Std PSNR  = 2.64 dB
+
+Mean SSIM = 0.746
+Std SSIM  = 0.025
+```
+
+This experiment is treated as **supporting evidence only**, not proof of full domain generalization, because of the small sample size and external-domain setup.
+
+No external dataset was used for model training.
+
+---
+
+# 14. Dataset
+
+Training and competition evaluation use the KLA-provided data.
+
+Training set:
+
+```
+3,200 matched GT + NoisyLR pairs
+```
+
+Split:
+
+```
+2,880 training
+320 validation
+```
+
+with:
+
+```
+Seed = 42
+```
+
+No public/external dataset was used for model training.
+
+---
+
+# 15. Known Limitations
+
+- **Statistical significance:** Results are from single training runs; small differences (0.01–0.1 dB) are not tested across multiple seeds.
+- **Reduced-scale ablation:** Favored the simpler baseline at a small scale.
+- **External comparison:** No end-to-end comparison against external architectures (e.g., Restormer, SwinIR).
+- **Deployment:** ONNX export and TensorRT conversion are not implemented.
+- **Mixture Usage:** The corrected LDMH component usage is not perfectly uniform (≈ 19% / 40% / 41%).
+
+---
+
+# 16. Detailed Research Documentation
+
+For the complete scientific investigation, statistical derivations, model formulation, experiments and development history, see:
+
+```
+Documents/Research.docx
+```
+
+Relevant experiment notebooks:
+
+```
+notebooks/03_Local_Distribution_Analysis.ipynb
+notebooks/04_LDMH_Design.ipynb
+notebooks/05_Model_Training.ipynb
+notebooks/06_Ablation_Study.ipynb
+notebooks/07_Comparison_and_OOD.ipynb
+notebooks/08_Visualization.ipynb
+notebooks/09_Inference_Benchmark.ipynb
+```
+
+---
+
+# 17. References
+
+1. T. Kumar, R. Brennan, A. Mileo and M. Bendechache,
+   **"Image Data Augmentation Approaches: A Comprehensive Survey and Future Directions,"** IEEE Access, 2024.
+2. L. Zhai, Y. Wang, S. Cui and Y. Zhou,
+   **"A Comprehensive Review of Deep Learning-Based Real-World Image Restoration,"** IEEE Access, 2023.
+3. J. Terven, D. M. Cordova-Esparza, J. A. Romero-González et al.,
+   **"A Comprehensive Survey of Loss Functions and Metrics in Deep Learning,"** Artificial Intelligence Review, 2025.
+4. L. Chen, X. Chu, X. Zhang and J. Sun,
+   **"Simple Baselines for Image Restoration,"** ECCV 2022.
+5. T. Amemiya,
+   **"Regression Analysis when the Dependent Variable is Truncated Normal,"** Econometrica, 1973.
+6. **KLA Hackathon Problem Statement and provided GT + NoisyLR paired dataset.**
+
+---
+
+<div align="center">
+  <i>Developed with ❤️ for KLA Hackathon 2026</i>
+</div>
