@@ -103,9 +103,7 @@ pip install -r requirements.txt
 ## 3.3 Run inference
 
 ```
-python inference.py \
-    --input_dir <INPUT_DIRECTORY> \
-    --output_dir <OUTPUT_DIRECTORY>
+python inference.py --input_dir <degraded_images_folder> --output_dir <output_folder>
 ```
 
 Example:
