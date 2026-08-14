@@ -1,0 +1,274 @@
+:root {
+  --navy: #16283F;
+  --navy-deep: #0F1E30;
+  --tan: #C7A97A;
+  --cream: #FAF7F1;
+  --gold: #B4915B;
+  --ink: #1B1B1B;
+  --line: #E4DCC9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+}
+
+h1, h2, h3, .display {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mono, code, .metric-value {
+  font-family: "IBM Plex Mono", "Courier New", monospace;
+}
+
+.eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ---------- Masthead ---------- */
+.masthead {
+  background: var(--navy);
+  color: #F2EDE3;
+  padding: 2.4rem 2rem 2.6rem;
+  text-align: center;
+}
+.masthead .eyebrow {
+  color: var(--tan);
+  margin-bottom: 0.9rem;
+  display: inline-block;
+  border: 1px solid rgba(199, 169, 122, 0.5);
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+}
+.masthead h1 {
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  max-width: 46rem;
+  margin: 0 auto;
+  line-height: 1.22;
+}
+.masthead p.sub {
+  margin-top: 0.9rem;
+  color: #C9C2B2;
+  font-size: 1rem;
+  max-width: 38rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- Stat band ---------- */
+.stat-band {
+  background: var(--tan);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.stat-tile {
+  background: var(--navy);
+  color: #F2EDE3;
+  padding: 1.3rem 1.6rem;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.stat-tile:last-child { border-right: none; }
+.stat-tile .label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tan);
+  margin-bottom: 0.3rem;
+}
+.stat-tile .value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/* ---------- Main content ---------- */
+main {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 3.2rem 2rem 4rem;
+}
+
+.upload-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 3px rgba(22, 40, 63, 0.05);
+}
+.upload-card .prompt {
+  font-family: "Playfair Display", serif;
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+.upload-card .hint {
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  color: #6b6455;
+  margin-top: 0.3rem;
+}
+
+.dropzone {
+  border: 1.5px dashed var(--gold);
+  border-radius: 6px;
+  padding: 1rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  background: #fffdf9;
+}
+.dropzone.dragover {
+  background: #fbf3e6;
+  border-color: var(--navy);
+}
+.dropzone .filename {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: var(--navy);
+}
+
+.btn {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy);
+  background: transparent;
+  border: 1.5px solid var(--navy);
+  border-radius: 999px;
+  padding: 0.75rem 1.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.btn:hover { background: var(--navy); color: #fff; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.error-banner {
+  margin-top: 1.2rem;
+  background: #fbeceb;
+  border: 1px solid #d98b84;
+  color: #8a2e26;
+  border-radius: 4px;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Results ---------- */
+.results {
+  margin-top: 3rem;
+}
+.results h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.3rem;
+}
+.results .filename-line {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: #6b6455;
+  margin-bottom: 1.8rem;
+}
+
+.panel-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.4rem;
+}
+@media (max-width: 780px) {
+  .panel-strip { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.panel .panel-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--navy);
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.panel .panel-label .step-num {
+  color: var(--tan);
+  font-family: "IBM Plex Mono", monospace;
+}
+.panel img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #f2efe8;
+}
+.panel .panel-caption {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8rem;
+  color: #6b6455;
+  border-top: 1px solid var(--line);
+}
+
+.metrics-row {
+  margin-top: 1.4rem;
+  display: flex;
+  gap: 2.2rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: #4a4436;
+}
+.metrics-row .metric-label {
+  font-family: "Inter", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: #9a8f75;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+/* ---------- Footer ---------- */
+footer {
+  background: var(--navy-deep);
+  color: #E7E1D3;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+footer p {
+  font-family: "Playfair Display", serif;
+  font-size: 1.3rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  line-height: 1.4;
+}
+footer .accent { color: var(--tan); }
+footer .fine-print {
+  margin-top: 1.4rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.75rem;
+  color: #7C7869;
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semiconductor Image Restoration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="masthead">
+    <span class="eyebrow">Distribution-Adaptive Restoration Lab</span>
+    <h1>Restoring degraded semiconductor inspection images, one upload at a time.</h1>
+    <p class="sub">Upload a degraded scan — the trained model removes speckle and Gaussian noise and reconstructs fine structure at full resolution.</p>
+  </header>
+
+  <div class="stat-band">
+    <div class="stat-tile">
+      <div class="label">Model</div>
+      <div class="value">DistributionMixtureRestorationNet</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Parameters</div>
+      <div class="value">{{ "{:,}".format(model_meta.params) if model_meta.get('params') else '—' }}</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Validated PSNR / SSIM</div>
+      <div class="value">
+        {% if model_meta.get('psnr') %}{{ "%.2f"|format(model_meta.psnr) }} dB / {{ "%.3f"|format(model_meta.ssim) }}{% else %}—{% endif %}
+      </div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Inference Device</div>
+      <div class="value">{{ model_meta.device or '—' }}</div>
+    </div>
+  </div>
+
+  <main>
+
+    {% if model_load_error %}
+      <div class="error-banner">
+        The trained model could not be loaded on the server: <strong>{{ model_load_error }}</strong>.
+        Restoration is unavailable until this is resolved.
+      </div>
+    {% endif %}
+
+    <form class="upload-card" action="/predict" method="post" enctype="multipart/form-data" id="upload-form">
+      <div>
+        <div class="prompt">Choose a degraded image to restore.</div>
+        <div class="hint">Accepts .npy arrays or standard images (PNG, JPG, BMP, TIFF) — up to 10 MB.</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <label class="dropzone" id="dropzone" for="file-input">
+          <span class="filename" id="filename-display">No file selected</span>
+        </label>
+        <input type="file" id="file-input" name="file" accept=".npy,.png,.jpg,.jpeg,.bmp,.tif,.tiff" style="display:none;">
+        <button class="btn" type="submit" id="submit-btn" {% if model_load_error %}disabled{% endif %}>Restore Image</button>
+      </div>
+    </form>
+
+    {% if error %}
+      <div class="error-banner">{{ error }}</div>
+    {% endif %}
+
+    {% if result %}
+    <section class="results">
+      <h2>Restoration Result</h2>
+      <div class="filename-line">{{ result.filename }} &nbsp;·&nbsp; input {{ result.input_shape }} → output {{ result.output_shape }}</div>
+
+      <div class="panel-strip">
+        <div class="panel">
+          <div class="panel-label"><span class="step-num">01</span> Uploaded (Degraded)</div>
+          <img src="data:image/png;base64,{{ result.uploaded_b64 }}" alt="Uploaded degraded image">
+          <div class="panel-caption">Original input, range {{ result.input_range }}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-label"><span class="step-num">02</span> Noise Removed</div>
+          <img src="data:image/png;base64,{{ result.diff_b64 }}" alt="Computed noise/difference map">
+          <div class="panel-caption">|restored − upsampled input|, mean change {{ result.mean_change }}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-label"><span class="step-num">03</span> Restored</div>
+          <img src="data:image/png;base64,{{ result.restored_b64 }}" alt="Restored output image">
+          <div class="panel-caption">Model output, clamped to [0, 1]</div>
+        </div>
+      </div>
+
+      <div class="metrics-row">
+        <div><span class="metric-label">Input Resolution</span><span class="metric-value">{{ result.input_shape }}</span></div>
+        <div><span class="metric-label">Output Resolution</span><span class="metric-value">{{ result.output_shape }}</span></div>
+        <div><span class="metric-label">Mean Pixel Change</span><span class="metric-value">{{ result.mean_change }}</span></div>
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <footer>
+    <p>Grounded in evidence, not assumption — <span class="accent">every restoration</span> is produced by a model whose loss function was <span class="accent">derived from the real noise statistics</span> of this data.</p>
+    <div class="fine-print">The "Noise Removed" panel visualizes the computed difference between the restored output and the upsampled input — not a ground-truth error, since no reference exists for arbitrary uploads.</div>
+  </footer>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('dropzone');
+    const filenameDisplay = document.getElementById('filename-display');
+
+    fileInput.addEventListener('change', () => {
+      filenameDisplay.textContent = fileInput.files.length
+        ? fileInput.files[0].name
+        : 'No file selected';
+    });
+
+    ['dragover', 'dragenter'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); })
+    );
+    ['dragleave', 'drop'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); })
+    );
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        filenameDisplay.textContent = e.dataTransfer.files[0].name;
+      }
+    });
+  </script>
+
+</body>
+</html>
