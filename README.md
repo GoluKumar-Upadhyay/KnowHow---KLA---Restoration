@@ -293,8 +293,15 @@ KnowHow-KLA-Restoration/
 │   ├── 07_Comparison_and_OOD.ipynb
 │   ├── 08_Visualization.ipynb
 │   ├── 09_Inference_Benchmark.ipynb
-│   ├── Proposed_Model_Testing.ipynb
+│   ├── 01_Data_Analysis-1 .py 
+    |── 01_Data_Analysis_2 .ipynb
+    |── 01_Data_Analysis_3 .ipynb
+    |── 02_Local_Distribution_Analysis.ipynb
+    |── validates the statistical claim _ original _data.ipynb  
+    |── validates the statistical claim_sybthesized .ipynb
+    |── Proposed_Model_Testing.ipynb
 │   └── Quick_Load_And_Predict.ipynb
+|   |
 │
 ├── results/
 │   └── checkpoints/
