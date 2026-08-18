@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run.py -- official submission entry point for the KLA Problem Statement
+run.py -- entry point 
 (AI-Based Restoration of Degraded Images), SEMICON Hackathon 2026.
 
 USAGE (required, positional, exactly as specified):

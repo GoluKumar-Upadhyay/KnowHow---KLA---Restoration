@@ -32,3 +32,9 @@ tensorboard/
 # OS
 .DS_Store
 Thumbs.db
+
+# Web application
+Web Application/
+
+# Manuscript
+Journal_Manuscripts.docx
