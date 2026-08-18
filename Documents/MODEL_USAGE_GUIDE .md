@@ -14,8 +14,24 @@ CPU and NVIDIA GPU systems. Complete `ENVIRONMENT_SETUP.md` first.
 # 1. Verify the checkpoint loads
 python -c "import torch; from models.restoration_net import DistributionMixtureRestorationNet; m = DistributionMixtureRestorationNet(use_film=True); m.load_state_dict(torch.load('results/checkpoints/DistributionMixtureRestorationNet.pth', map_location='cpu')['model_state_dict']); print('OK')"
 
-# 2. Run inference
-python inference.py --input_dir <degraded_images_folder> --output_dir <output_folder>
+```
+ 
+## Setup
+```bash
+pip install -r requirements.txt
+```
+No internet access, API keys, additional model downloads, or manual configuration are required at run time -- the checkpoint is included in `models/` and loaded automatically.
+ 
+## Run
+```bash
+python run.py <input-dir> <output-dir>
+```
+**Example:**
+```bash
+python run.py /path/to/degraded /path/to/restored
+```
+ 
+
 
 # 3. Check the output folder for restored .npy files
 ```

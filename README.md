@@ -95,24 +95,23 @@ cd KnowHow-KLA-Restoration
 ## 3.2 Install dependencies
 
 ```
+ 
+## Setup
+```bash
 pip install -r requirements.txt
 ```
-
-`requirements.txt` was generated from the environment used to produce the submitted checkpoint.
-
-## 3.3 Run inference
-
+No internet access, API keys, additional model downloads, or manual configuration are required at run time -- the checkpoint is included in `models/` and loaded automatically.
+ 
+## Run
+```bash
+python run.py <input-dir> <output-dir>
 ```
-python inference.py --input_dir <degraded_images_folder> --output_dir <output_folder>
+**Example:**
+```bash
+python run.py /path/to/degraded /path/to/restored
 ```
+ 
 
-Example:
-
-```
-python inference.py \
-    --input_dir /path/to/degraded_npy_folder \
-    --output_dir /path/to/restored_output_folder
-```
 
 The script automatically loads:
 
@@ -122,17 +121,6 @@ results/checkpoints/DistributionMixtureRestorationNet.pth
 
 No source-code modification or manual checkpoint-path editing is required.
 
-### Optional inference configuration
-
-```
-python inference.py \
-    --input_dir /path/to/degraded_npy_folder \
-    --output_dir /path/to/restored_output_folder \
-    --batch_size 16 \
-    --half
-```
-
----
 
 # 4. Evaluation / Inference Pipeline
 
